@@ -47,7 +47,7 @@ class TheoDoiMuonSachService {
     return (
       await this.api.put(`/${id}`, {
         trangThai: "returned",
-        ngayTra: new Date(),
+        ngayTra: new Date().toISOString(),
       })
     ).data;
   }

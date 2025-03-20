@@ -162,7 +162,8 @@ export default {
             currentUser: null,
             borrowRecords: [],
             loading: true,
-            searchText: ""
+            searchText: "",
+            error: null
         };
     },
     computed: {
@@ -224,14 +225,23 @@ export default {
             this.$router.push({ name: 'borrow-request', params: { id: borrow._id } });
         },
         async loadBorrowRecords() {
+            this.error = null;
             try {
+                console.log("Current user:", this.currentUser);
                 if (this.currentUser && this.currentUser._id) {
+                    console.log("Fetching borrow records for user ID:", this.currentUser._id);
                     this.borrowRecords = await TheoDoiMuonSachService.getMyRequests(this.currentUser._id);
+                    console.log("Fetched borrow records:", this.borrowRecords);
+
                     // Sort by date (newest first)
                     this.borrowRecords.sort((a, b) => new Date(b.ngayMuon) - new Date(a.ngayMuon));
+                } else {
+                    console.error("No user ID available");
+                    this.error = "Không thể xác định người dùng, vui lòng đăng nhập lại";
                 }
             } catch (error) {
                 console.error("Error loading borrow records:", error);
+                this.error = "Có lỗi xảy ra khi tải dữ liệu: " + (error.message || "Lỗi không xác định");
             } finally {
                 this.loading = false;
             }

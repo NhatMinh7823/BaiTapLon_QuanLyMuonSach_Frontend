@@ -9,6 +9,10 @@
             <p class="mt-2">Đang tải thông tin...</p>
         </div>
 
+        <div v-else-if="error" class="alert alert-danger">
+            {{ error }}
+        </div>
+
         <div v-else-if="!borrowRecord" class="alert alert-danger">
             Không tìm thấy thông tin yêu cầu mượn sách. Vui lòng thử lại sau.
         </div>
@@ -67,7 +71,7 @@
                                     <div class="info-item">
                                         <span class="info-label">Hạn trả:</span>
                                         <span class="info-value">{{ formatDate(getReturnDeadline(borrowRecord.ngayMuon))
-                                            }}</span>
+                                        }}</span>
                                     </div>
                                     <div class="info-item">
                                         <span class="info-label">Ngày trả:</span>
@@ -151,7 +155,8 @@ export default {
         return {
             borrowRecord: null,
             currentUser: null,
-            loading: true
+            loading: true,
+            error: null
         };
     },
     computed: {
@@ -193,10 +198,14 @@ export default {
             return date;
         },
         async loadBorrowRecord() {
+            this.error = null;
             try {
+                console.log("Loading borrow record with ID:", this.id);
                 this.borrowRecord = await TheoDoiMuonSachService.get(this.id);
+                console.log("Fetched borrow record:", this.borrowRecord);
             } catch (error) {
                 console.error("Error loading borrow record:", error);
+                this.error = "Có lỗi xảy ra khi tải thông tin: " + (error.message || "Lỗi không xác định");
             } finally {
                 this.loading = false;
             }
