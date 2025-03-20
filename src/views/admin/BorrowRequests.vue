@@ -193,10 +193,16 @@ export default {
         },
         async approveBorrow(borrow) {
             try {
-                console.log("Approving borrow:", borrow);
                 await TheoDoiMuonSachService.approve(borrow._id, this.currentUser._id);
-                // Reload data after approval
-                this.loadBorrowRecords();
+                // Tìm bản ghi mượn sách trong danh sách
+                const index = this.borrowRecords.findIndex(record => record._id === borrow._id);
+                if (index !== -1 && this.borrowRecords[index].sach) {
+                    // Tải lại danh sách sách và bản ghi mượn để có dữ liệu mới nhất
+                    this.loadBorrowRecords();
+                } else {
+                    // Hoặc chỉ tải lại một bản ghi cụ thể
+                    this.loadBorrowRecords();
+                }
             } catch (error) {
                 console.error("Error approving request:", error);
                 alert("Có lỗi xảy ra khi duyệt yêu cầu. Vui lòng thử lại sau.");
@@ -215,9 +221,8 @@ export default {
         },
         async markAsReturned(borrow) {
             try {
-                console.log("Marking as returned:", borrow);
                 await TheoDoiMuonSachService.markAsReturned(borrow._id);
-                // Reload data after marking as returned
+                // Tải lại dữ liệu để cập nhật UI
                 this.loadBorrowRecords();
             } catch (error) {
                 console.error("Error marking as returned:", error);
