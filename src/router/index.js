@@ -1,5 +1,5 @@
 import { createWebHistory, createRouter } from "vue-router";
-import AuthService from "@/services/auth.service";
+import { useAuth } from "@/composables/useAuth";
 
 // Import components for public access
 import Home from "@/views/Home.vue";
@@ -144,14 +144,14 @@ const router = createRouter({
   routes,
 });
 
+// Sử dụng useAuth trong navigation guard
+const { isLoggedIn, isAdmin } = useAuth();
+
 // Navigation guard
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = AuthService.isAuthenticated();
-  const isAdmin = AuthService.isAdmin();
-
-  if (to.meta.requiresAuth && !isAuthenticated) {
+  if (to.meta.requiresAuth && !isLoggedIn.value) {
     next({ name: "login", query: { redirect: to.fullPath } });
-  } else if (to.meta.requiresAdmin && !isAdmin) {
+  } else if (to.meta.requiresAdmin && !isAdmin.value) {
     next({ name: "home" });
   } else {
     next();

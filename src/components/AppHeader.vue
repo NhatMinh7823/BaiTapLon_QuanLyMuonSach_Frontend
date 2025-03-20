@@ -1,4 +1,3 @@
-<!-- src/components/AppHeader.vue -->
 <template>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
@@ -82,12 +81,10 @@
                     <li class="nav-item dropdown" v-if="isLoggedIn">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-user mr-1"></i> {{ currentUser.hoLot || "" }} {{ currentUser.ten ||
-                                currentUser.hoTenNV
-                            || "" }}
+                            <i class="fas fa-user mr-1"></i> {{ displayName }}
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-                            <a class="dropdown-item" @click="logout">
+                            <a class="dropdown-item" @click="handleLogout">
                                 <i class="fas fa-sign-out-alt mr-1"></i> Đăng xuất
                             </a>
                         </div>
@@ -99,32 +96,41 @@
 </template>
 
 <script>
-import AuthService from "@/services/auth.service";
+import { inject, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 export default {
     name: "AppHeader",
-    data() {
-        return {
-            currentUser: null
+    setup() {
+        const auth = inject('auth');
+        const router = useRouter();
+
+        // Computed properties
+        const displayName = computed(() => {
+            if (!auth.user.value) return '';
+
+            if (auth.user.value.hoLot && auth.user.value.ten) {
+                return `${auth.user.value.hoLot} ${auth.user.value.ten}`;
+            } else if (auth.user.value.hoTenNV) {
+                return auth.user.value.hoTenNV;
+            }
+
+            return auth.user.value.email || 'Người dùng';
+        });
+
+        // Methods
+        const handleLogout = () => {
+            auth.logout();
+            router.push('/login');
         };
-    },
-    computed: {
-        isLoggedIn() {
-            return !!this.currentUser;
-        },
-        isAdmin() {
-            return this.currentUser && this.currentUser.role === "admin";
-        }
-    },
-    methods: {
-        logout() {
-            AuthService.logout();
-            this.currentUser = null;
-            this.$router.push("/login");
-        }
-    },
-    created() {
-        this.currentUser = AuthService.getCurrentUser();
+
+        return {
+            // Expose properties and methods
+            isLoggedIn: auth.isLoggedIn,
+            isAdmin: auth.isAdmin,
+            displayName,
+            handleLogout
+        };
     }
 };
 </script>

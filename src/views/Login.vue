@@ -7,8 +7,11 @@
                         <h3 class="mb-0">{{ isAdminLogin ? 'Đăng nhập quản trị' : 'Đăng nhập' }}</h3>
                     </div>
                     <div class="card-body">
-                        <div v-if="message" class="alert" :class="successful ? 'alert-success' : 'alert-danger'">
-                            {{ message }}
+                        <div v-if="error" class="alert alert-danger">
+                            {{ error }}
+                        </div>
+                        <div v-if="successMessage" class="alert alert-success">
+                            {{ successMessage }}
                         </div>
 
                         <form @submit.prevent="handleLogin">
@@ -33,8 +36,8 @@
                             </div>
 
                             <div class="form-group">
-                                <button class="btn btn-primary btn-block" :disabled="loading">
-                                    <span v-if="loading" class="spinner-border spinner-border-sm mr-1"></span>
+                                <button class="btn btn-primary btn-block" :disabled="isLoading">
+                                    <span v-if="isLoading" class="spinner-border spinner-border-sm mr-1"></span>
                                     <i v-else class="fas fa-sign-in-alt mr-1"></i>
                                     {{ isAdminLogin ? 'Đăng nhập quản trị' : 'Đăng nhập' }}
                                 </button>
@@ -52,54 +55,56 @@
 </template>
 
 <script>
-import AuthService from "@/services/auth.service";
+import { ref, inject, reactive } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 export default {
     name: "Login",
-    data() {
-        return {
-            user: {
-                email: "",
-                password: ""
-            },
-            loading: false,
-            message: "",
-            successful: false,
-            isAdminLogin: false
-        };
-    },
-    methods: {
-        handleLogin() {
-            this.loading = true;
-            this.message = "";
+    setup() {
+        const auth = inject('auth');
+        const router = useRouter();
+        const route = useRoute();
 
-            AuthService.login({
-                email: this.user.email,
-                password: this.user.password,
-                isAdmin: this.isAdminLogin
-            }).then(
-                () => {
-                    this.successful = true;
-                    this.message = "Đăng nhập thành công!";
+        // Reactive state
+        const user = reactive({
+            email: "",
+            password: ""
+        });
+        const isAdminLogin = ref(false);
+        const successMessage = ref('');
 
-                    // Redirect based on user role
-                    const user = AuthService.getCurrentUser();
-                    if (user.role === "admin") {
-                        this.$router.push("/admin");
-                    } else {
-                        const redirectPath = this.$route.query.redirect || "/user";
-                        this.$router.push(redirectPath);
-                    }
-                },
-                error => {
-                    this.successful = false;
-                    this.message = (error.response && error.response.data && error.response.data.message) ||
-                        error.message ||
-                        error.toString();
-                    this.loading = false;
+        // Methods
+        const handleLogin = async () => {
+            try {
+                await auth.login({
+                    email: user.email,
+                    password: user.password,
+                    isAdmin: isAdminLogin.value
+                });
+
+                successMessage.value = "Đăng nhập thành công!";
+
+                // Redirect based on user role
+                if (auth.isAdmin.value) {
+                    router.push("/admin");
+                } else {
+                    const redirectPath = route.query.redirect || "/user";
+                    router.push(redirectPath);
                 }
-            );
-        }
+            } catch (error) {
+                // Error được xử lý trong composable
+                console.error("Đăng nhập thất bại:", error);
+            }
+        };
+
+        return {
+            user,
+            isAdminLogin,
+            successMessage,
+            error: auth.error,
+            isLoading: auth.isLoading,
+            handleLogin
+        };
     }
 };
 </script>

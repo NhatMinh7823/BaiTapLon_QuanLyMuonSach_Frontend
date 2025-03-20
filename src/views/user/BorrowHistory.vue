@@ -49,11 +49,11 @@
                                     <td>
                                         <span class="badge" :class="{
                                             'badge-warning': borrow.trangThai === 'pending',
-                                            'badge-success': borrow.trangThai === 'approved',
+                                            'badge-success': borrow.trangThai === 'approved' && !borrow.ngayTra,
                                             'badge-danger': borrow.trangThai === 'rejected',
-                                            'badge-info': borrow.trangThai === 'returned'
+                                            'badge-info': borrow.trangThai === 'returned' || (borrow.trangThai === 'approved' && borrow.ngayTra)
                                         }">
-                                            {{ getStatusText(borrow.trangThai) }}
+                                            {{ getStatusText(borrow.trangThai, borrow.ngayTra) }}
                                         </span>
                                     </td>
                                     <td>
@@ -88,17 +88,6 @@
                         </div>
                         <div class="col-md-3">
                             <div class="stat-card">
-                                <div class="stat-icon bg-success">
-                                    <i class="fas fa-check"></i>
-                                </div>
-                                <div class="stat-details">
-                                    <div class="stat-number">{{ approvedCount }}</div>
-                                    <div class="stat-title">Được chấp nhận</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card">
                                 <div class="stat-icon bg-warning">
                                     <i class="fas fa-clock"></i>
                                 </div>
@@ -110,12 +99,48 @@
                         </div>
                         <div class="col-md-3">
                             <div class="stat-card">
+                                <div class="stat-icon bg-success">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="stat-details">
+                                    <div class="stat-number">{{ currentlyBorrowingCount }}</div>
+                                    <div class="stat-title">Đang mượn</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-icon bg-info">
+                                    <i class="fas fa-undo-alt"></i>
+                                </div>
+                                <div class="stat-details">
+                                    <div class="stat-number">{{ returnedCount }}</div>
+                                    <div class="stat-title">Đã trả</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="stat-card">
                                 <div class="stat-icon bg-danger">
                                     <i class="fas fa-times"></i>
                                 </div>
                                 <div class="stat-details">
                                     <div class="stat-number">{{ rejectedCount }}</div>
                                     <div class="stat-title">Bị từ chối</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background-color: #6f42c1;">
+                                    <i class="fas fa-check-double"></i>
+                                </div>
+                                <div class="stat-details">
+                                    <div class="stat-number">{{ completedCount }}</div>
+                                    <div class="stat-title">Đã hoàn thành</div>
                                 </div>
                             </div>
                         </div>
@@ -146,17 +171,30 @@ export default {
             const searchLower = this.searchText.toLowerCase();
             return this.borrowRecords.filter(borrow =>
                 (borrow.sach && borrow.sach.tenSach && borrow.sach.tenSach.toLowerCase().includes(searchLower)) ||
-                this.getStatusText(borrow.trangThai).toLowerCase().includes(searchLower)
+                this.getStatusText(borrow.trangThai, borrow.ngayTra).toLowerCase().includes(searchLower)
             );
         },
         pendingCount() {
             return this.borrowRecords.filter(borrow => borrow.trangThai === 'pending').length;
         },
-        approvedCount() {
-            return this.borrowRecords.filter(borrow => borrow.trangThai === 'approved').length;
+        currentlyBorrowingCount() {
+            return this.borrowRecords.filter(borrow =>
+                borrow.trangThai === 'approved' && !borrow.ngayTra
+            ).length;
+        },
+        returnedCount() {
+            return this.borrowRecords.filter(borrow =>
+                borrow.trangThai === 'returned' || (borrow.trangThai === 'approved' && borrow.ngayTra)
+            ).length;
         },
         rejectedCount() {
             return this.borrowRecords.filter(borrow => borrow.trangThai === 'rejected').length;
+        },
+        completedCount() {
+            return this.approvedCount + this.returnedCount;
+        },
+        approvedCount() {
+            return this.borrowRecords.filter(borrow => borrow.trangThai === 'approved').length;
         }
     },
     methods: {
@@ -169,10 +207,14 @@ export default {
                 day: 'numeric'
             }).format(date);
         },
-        getStatusText(status) {
+        getStatusText(status, returnDate) {
+            if (status === 'approved' && returnDate) {
+                return 'Đã trả';
+            }
+
             switch (status) {
                 case 'pending': return 'Đang chờ duyệt';
-                case 'approved': return 'Đã duyệt';
+                case 'approved': return 'Đang mượn';
                 case 'rejected': return 'Từ chối';
                 case 'returned': return 'Đã trả';
                 default: return 'Không xác định';
@@ -193,6 +235,11 @@ export default {
             } finally {
                 this.loading = false;
             }
+        },
+        // Method to refresh data, useful when returning to this page after an action
+        refreshData() {
+            this.loading = true;
+            this.loadBorrowRecords();
         }
     },
     created() {
@@ -202,6 +249,15 @@ export default {
             return;
         }
         this.loadBorrowRecords();
+    },
+    // Add this to refresh data when navigating back to this page
+    beforeRouteEnter(to, from, next) {
+        next(vm => {
+            // Check if we're coming back from a detail page
+            if (from.name === 'borrow-request') {
+                vm.refreshData();
+            }
+        });
     }
 };
 </script>
@@ -214,6 +270,7 @@ export default {
     background-color: #f8f9fa;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 100%;
 }
 
 .stat-icon {

@@ -13,12 +13,19 @@
 </template>
 
 <script>
+import { provide } from 'vue';
 import AppHeader from "@/components/AppHeader.vue";
+import { useAuth } from '@/composables/useAuth';
 
 export default {
   name: "App",
   components: {
     AppHeader
+  },
+  setup() {
+    // Khởi tạo composable và provide cho tất cả components con
+    const auth = useAuth();
+    provide('auth', auth);
   }
 };
 </script>
