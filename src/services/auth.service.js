@@ -34,8 +34,7 @@ class AuthService {
 
   isAdmin() {
     const user = this.getCurrentUser();
-    // return user && user.role === "admin";
-    return true;
+    return user && user.role === "admin";
   }
 }
 
