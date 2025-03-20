@@ -26,28 +26,47 @@ class TheoDoiMuonSachService {
   }
 
   async approve(id, staffId) {
+    // Trước khi cập nhật trạng thái, lấy dữ liệu hiện tại
+    const currentRecord = await this.get(id);
+
     return (
       await this.api.put(`/${id}`, {
         trangThai: "approved",
         maNhanVienDuyet: staffId,
+        // Đảm bảo giữ lại các trường quan trọng
+        maDocGia: currentRecord.maDocGia,
+        maSach: currentRecord.maSach,
       })
     ).data;
   }
 
   async reject(id, staffId) {
+    // Trước khi cập nhật trạng thái, lấy dữ liệu hiện tại
+    const currentRecord = await this.get(id);
+
     return (
       await this.api.put(`/${id}`, {
         trangThai: "rejected",
         maNhanVienDuyet: staffId,
+        // Đảm bảo giữ lại các trường quan trọng
+        maDocGia: currentRecord.maDocGia,
+        maSach: currentRecord.maSach,
       })
     ).data;
   }
 
   async markAsReturned(id) {
+    // Trước khi cập nhật trạng thái, lấy dữ liệu hiện tại
+    const currentRecord = await this.get(id);
+
     return (
       await this.api.put(`/${id}`, {
         trangThai: "returned",
         ngayTra: new Date().toISOString(),
+        // Đảm bảo giữ lại các trường quan trọng
+        maDocGia: currentRecord.maDocGia,
+        maSach: currentRecord.maSach,
+        maNhanVienDuyet: currentRecord.maNhanVienDuyet,
       })
     ).data;
   }

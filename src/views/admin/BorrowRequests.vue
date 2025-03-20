@@ -1,4 +1,3 @@
-<!-- src/views/admin/BorrowRequests.vue -->
 <template>
     <div class="admin-borrow-requests">
         <h1 class="page-title">Quản lý yêu cầu mượn sách</h1>
@@ -50,6 +49,10 @@
                     <p class="mt-2">Đang tải danh sách yêu cầu mượn sách...</p>
                 </div>
 
+                <div v-else-if="error" class="alert alert-danger">
+                    {{ error }}
+                </div>
+
                 <div v-else-if="filteredBorrows.length === 0" class="alert alert-info">
                     Không tìm thấy yêu cầu mượn sách nào.
                 </div>
@@ -84,15 +87,15 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" v-if="borrow.trangThai === 'pending'">
-                                        <button class="btn btn-sm btn-success" @click="approveBorrow(borrow._id)">
+                                        <button class="btn btn-sm btn-success" @click="approveBorrow(borrow)">
                                             <i class="fas fa-check"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-danger" @click="rejectBorrow(borrow._id)">
+                                        <button class="btn btn-sm btn-danger" @click="rejectBorrow(borrow)">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
                                     <div v-else-if="borrow.trangThai === 'approved' && !borrow.ngayTra">
-                                        <button class="btn btn-sm btn-info" @click="markAsReturned(borrow._id)">
+                                        <button class="btn btn-sm btn-info" @click="markAsReturned(borrow)">
                                             <i class="fas fa-undo-alt"></i> Đánh dấu đã trả
                                         </button>
                                     </div>
@@ -121,7 +124,8 @@ export default {
             loading: true,
             searchText: "",
             activeTab: "pending",
-            currentUser: null
+            currentUser: null,
+            error: null
         };
     },
     computed: {
@@ -172,38 +176,49 @@ export default {
         },
         async loadBorrowRecords() {
             this.loading = true;
+            this.error = null;
             try {
+                console.log("Loading borrow records...");
                 this.borrowRecords = await TheoDoiMuonSachService.getAll();
+                console.log("Loaded records:", this.borrowRecords);
+
                 // Sort by date (newest first)
                 this.borrowRecords.sort((a, b) => new Date(b.ngayMuon) - new Date(a.ngayMuon));
             } catch (error) {
                 console.error("Error loading borrow records:", error);
+                this.error = "Có lỗi xảy ra khi tải dữ liệu: " + (error.message || "Lỗi không xác định");
             } finally {
                 this.loading = false;
             }
         },
-        async approveBorrow(id) {
+        async approveBorrow(borrow) {
             try {
-                await TheoDoiMuonSachService.approve(id, this.currentUser._id);
-                await this.loadBorrowRecords();
+                console.log("Approving borrow:", borrow);
+                await TheoDoiMuonSachService.approve(borrow._id, this.currentUser._id);
+                // Reload data after approval
+                this.loadBorrowRecords();
             } catch (error) {
-                console.error("Error approving borrow request:", error);
+                console.error("Error approving request:", error);
                 alert("Có lỗi xảy ra khi duyệt yêu cầu. Vui lòng thử lại sau.");
             }
         },
-        async rejectBorrow(id) {
+        async rejectBorrow(borrow) {
             try {
-                await TheoDoiMuonSachService.reject(id, this.currentUser._id);
-                await this.loadBorrowRecords();
+                console.log("Rejecting borrow:", borrow);
+                await TheoDoiMuonSachService.reject(borrow._id, this.currentUser._id);
+                // Reload data after rejection
+                this.loadBorrowRecords();
             } catch (error) {
-                console.error("Error rejecting borrow request:", error);
+                console.error("Error rejecting request:", error);
                 alert("Có lỗi xảy ra khi từ chối yêu cầu. Vui lòng thử lại sau.");
             }
         },
-        async markAsReturned(id) {
+        async markAsReturned(borrow) {
             try {
-                await TheoDoiMuonSachService.markAsReturned(id);
-                await this.loadBorrowRecords();
+                console.log("Marking as returned:", borrow);
+                await TheoDoiMuonSachService.markAsReturned(borrow._id);
+                // Reload data after marking as returned
+                this.loadBorrowRecords();
             } catch (error) {
                 console.error("Error marking as returned:", error);
                 alert("Có lỗi xảy ra khi đánh dấu đã trả sách. Vui lòng thử lại sau.");
