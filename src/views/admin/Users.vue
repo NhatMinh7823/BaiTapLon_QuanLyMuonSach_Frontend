@@ -1,11 +1,11 @@
 <template>
     <div class="admin-users">
-        <h1 class="page-title">Quản lý độc giả</h1>
+        <h1 class="page-title">Quản lý đọc giả</h1>
 
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Danh sách độc giả</h4>
+                    <h4 class="mb-0">Danh sách đọc giả</h4>
                     <div class="form-inline">
                         <div class="input-group">
                             <input type="text" class="form-control" placeholder="Tìm kiếm..." v-model="searchText"
@@ -24,7 +24,7 @@
                     <div class="spinner-border text-primary" role="status">
                         <span class="sr-only">Loading...</span>
                     </div>
-                    <p class="mt-2">Đang tải danh sách độc giả...</p>
+                    <p class="mt-2">Đang tải danh sách đọc giả...</p>
                 </div>
 
                 <div v-else-if="error" class="alert alert-danger">
@@ -32,7 +32,7 @@
                 </div>
 
                 <div v-else-if="filteredUsers.length === 0" class="alert alert-info">
-                    Không tìm thấy độc giả nào.
+                    Không tìm thấy đọc giả nào.
                 </div>
 
                 <div v-else class="table-responsive">
@@ -86,13 +86,13 @@
                     <div class="col-md-4">
                         <div class="stat-card">
                             <div class="stat-value">{{ users.length }}</div>
-                            <div class="stat-label">Tổng số độc giả</div>
+                            <div class="stat-label">Tổng số đọc giả</div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="stat-card">
                             <div class="stat-value">{{ activeUsers }}</div>
-                            <div class="stat-label">Độc giả đang mượn sách</div>
+                            <div class="stat-label">Đọc giả đang mượn sách</div>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -105,12 +105,12 @@
             </div>
         </div>
 
-        <!-- Modal xem chi tiết độc giả -->
+        <!-- Modal xem chi tiết đọc giả -->
         <div class="modal fade" id="userDetailModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content" v-if="selectedUser">
                     <div class="modal-header bg-info text-white">
-                        <h5 class="modal-title">Chi tiết độc giả</h5>
+                        <h5 class="modal-title">Chi tiết đọc giả</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -186,7 +186,7 @@
                             </table>
                         </div>
                         <div v-else class="alert alert-info mt-3">
-                            <i class="fas fa-info-circle mr-2"></i> Độc giả này chưa mượn sách nào.
+                            <i class="fas fa-info-circle mr-2"></i> Đọc giả này chưa mượn sách nào.
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -208,10 +208,10 @@
                         </button>
                     </div>
                     <div class="modal-body" v-if="userToDelete">
-                        <p>Bạn có chắc chắn muốn xóa độc giả <strong>{{ userToDelete.hoLot }} {{ userToDelete.ten
+                        <p>Bạn có chắc chắn muốn xóa đọc giả <strong>{{ userToDelete.hoLot }} {{ userToDelete.ten
                                 }}</strong>?</p>
                         <p class="text-danger"><strong>Lưu ý:</strong> Thao tác này sẽ xóa tất cả thông tin và lịch sử
-                            mượn sách của độc giả này!</p>
+                            mượn sách của đọc giả này!</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
@@ -257,7 +257,7 @@ export default {
             );
         },
         activeUsers() {
-            // Số lượng độc giả đang mượn sách
+            // Số lượng đọc giả đang mượn sách
             const activeUserIds = new Set();
             this.borrowRecords.forEach(record => {
                 if (record.trangThai === 'approved' && !record.ngayTra && record.maDocGia) {
@@ -309,7 +309,7 @@ export default {
             this.loading = true;
             this.error = null;
             try {
-                // Lấy tất cả độc giả từ collection docgia
+                // Lấy tất cả đọc giả từ collection docgia
                 this.users = await DocGiaService.getAll();
                 console.log("Loaded users:", this.users);
 
@@ -317,7 +317,7 @@ export default {
                 this.borrowRecords = await TheoDoiMuonSachService.getAll();
                 console.log("Loaded borrow records:", this.borrowRecords);
 
-                // Sắp xếp danh sách độc giả theo tên
+                // Sắp xếp danh sách đọc giả theo tên
                 this.users.sort((a, b) => {
                     const nameA = `${a.hoLot} ${a.ten}`.toLowerCase();
                     const nameB = `${b.hoLot} ${b.ten}`.toLowerCase();
@@ -336,7 +336,7 @@ export default {
         async viewUserDetails(user) {
             this.selectedUser = user;
 
-            // Lọc các bản ghi mượn sách của độc giả
+            // Lọc các bản ghi mượn sách của đọc giả
             this.userBorrows = this.borrowRecords.filter(record =>
                 record.maDocGia === user._id
             );
@@ -361,10 +361,10 @@ export default {
                 this.loadData();
 
                 // Thông báo thành công
-                alert("Xóa độc giả thành công!");
+                alert("Xóa đọc giả thành công!");
             } catch (error) {
                 console.error("Error deleting user:", error);
-                alert("Có lỗi xảy ra khi xóa độc giả. Vui lòng thử lại sau.");
+                alert("Có lỗi xảy ra khi xóa đọc giả. Vui lòng thử lại sau.");
             }
         }
     },
